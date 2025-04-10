@@ -1,0 +1,8 @@
+#torch (with cuda) - https://pytorch.org/get-started/locally/
+transformers
+datasets
+evaluate
+accelerate
+timm
+ipykernel
+ipywidgets
