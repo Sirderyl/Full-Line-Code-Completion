@@ -1,0 +1,30 @@
+null
+"getTaxiById "
+": found Taxi = "
+7
+"No taxi with registration found: "
+null
+"Bad Request"
+2
+20
+"Number of seats must be between 2 and 20"
+null
+"Bad Request"
+"registration"
+"This registration already exists. It must be unique"
+"Taxi details already in use"
+"createTaxi completed. Taxi = "
+null
+"Invalid Taxi supplied"
+null
+"Taxi with id "
+" not found"
+"Bad Request"
+"registration"
+"This registration already exists. It must be unique"
+"Taxi details already in use"
+"updateTaxi completed. Taxi = "
+null
+"Taxi with id "
+" not found"
+"deleteTaxi completed. Taxi = "

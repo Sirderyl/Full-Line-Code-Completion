@@ -1,4 +1,4 @@
-package uk.ac.newcastle.enterprisemiddleware;
+package com.codelm;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -7,7 +7,7 @@ import java.nio.file.Paths;
 public class ParsingText {
     public static void main(String[] args) {
         try {
-            String basePath = "src/main/java/uk/ac/newcastle/enterprisemiddleware/taxi/";
+            String basePath = "src/main/java/com/codelm/taxi/";
             String inputPath = basePath + "TaxiRestService.java";
             String outputPath = basePath + "CleanTaxiRestService.java";
 

@@ -1,16 +1,27 @@
 package uk.ac.newcastle.enterprisemiddleware.taxi;
 
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponses;
+import org.jboss.resteasy.reactive.Cache;
 import uk.ac.newcastle.enterprisemiddleware.util.RestServiceException;
-
+import javax.inject.Inject;
+import javax.inject.Named;
 import javax.persistence.NoResultException;
+import javax.transaction.Transactional;
 import javax.validation.ConstraintViolation;
 import javax.validation.ConstraintViolationException;
+import javax.validation.Valid;
+import javax.ws.rs.*;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
 
-public class CleanTaxiRestService {
+public class TaxiRestService {
 
     Logger log;
 
