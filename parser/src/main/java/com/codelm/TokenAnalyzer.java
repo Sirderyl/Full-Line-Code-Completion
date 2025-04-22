@@ -6,6 +6,7 @@ import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
@@ -23,6 +24,9 @@ public class TokenAnalyzer {
         public int maxIdentifierChars;
         public List<String> identifierValues;
         public Map<String, Integer> identifierFrequencies;
+        public int totalBytes;
+        public int totalLiteralBytes;
+        public int totalIdentifierBytes;
     }
 
     public static TokenStats analyze(String javaCode) {
@@ -44,6 +48,10 @@ public class TokenAnalyzer {
         stats.totalIdentifierChars = 0;
         stats.maxIdentifierChars = 0;
 
+        stats.totalBytes = 0;
+        stats.totalLiteralBytes = 0;
+        stats.totalIdentifierBytes = 0;
+
         stats.literalValues = new ArrayList<>();
         stats.literalFrequencies = new HashMap<>();
         stats.identifierValues = new ArrayList<>();
@@ -59,21 +67,26 @@ public class TokenAnalyzer {
 
             // If token is literal/identifier, get the value - length of the string and increment the token count by the length
             // Add a counter for #bytes for literals and identifiers
-            int length = token.getText().length();
             String text = token.getText();
+            int charLength = text.length();
+            int byteLength = text.getBytes(StandardCharsets.UTF_8).length;
+            stats.totalBytes += byteLength;
+
             if (category.equals("LITERAL")) {
                 stats.literalValues.add(text);
                 stats.literalFrequencies.put(text, stats.literalFrequencies.getOrDefault(text, 0) + 1);
-                stats.totalLiteralChars += length;
-                if (length > stats.maxLiteralChars) {
-                    stats.maxLiteralChars = length;
+                stats.totalLiteralChars += charLength;
+                stats.totalLiteralBytes += byteLength;
+                if (charLength > stats.maxLiteralChars) {
+                    stats.maxLiteralChars = charLength;
                 }
             } else if (category.equals("IDENTIFIER")) {
                 stats.identifierValues.add(text);
                 stats.identifierFrequencies.put(text, stats.identifierFrequencies.getOrDefault(text, 0) + 1);
-                stats.totalIdentifierChars += length;
-                if (length > stats.maxIdentifierChars) {
-                    stats.maxIdentifierChars = length;
+                stats.totalIdentifierChars += charLength;
+                stats.totalIdentifierBytes += byteLength;
+                if (charLength > stats.maxIdentifierChars) {
+                    stats.maxIdentifierChars = charLength;
                 }
             }
 
@@ -92,14 +105,18 @@ public class TokenAnalyzer {
         }
 
         System.out.println("\nLiteral stats:");
+        System.out.println("Total literal bytes: " + stats.totalLiteralBytes);
         System.out.println("Total literal chars: " + stats.totalLiteralChars);
         System.out.println("Average literal chars: " + avgLiteralLength);
         System.out.println("Max literal chars: " + stats.maxLiteralChars);
 
         System.out.println("\nIdentifier stats:");
+        System.out.println("Total identifier bytes: " + stats.totalIdentifierBytes);
         System.out.println("Total identifier chars: " + stats.totalIdentifierChars);
         System.out.println("Average identifier chars: " + avgIdentifierLength);
         System.out.println("Max identifier chars: " + stats.maxIdentifierChars);
+
+        System.out.println("\nTotal bytes (all tokens): " + stats.totalBytes);
 
         return stats;
     }
