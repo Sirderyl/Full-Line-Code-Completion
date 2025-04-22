@@ -94,8 +94,10 @@ public class TokenAnalyzer {
         }
 
         // Calculating the average literal/identifier lengths
-        double avgLiteralLength = (double) stats.totalLiteralChars / stats.tokenTypeCounts.get("LITERAL");
-        double avgIdentifierLength = (double) stats.totalIdentifierChars / stats.tokenTypeCounts.get("IDENTIFIER");
+        double avgLiteralLength = stats.tokenTypeCounts.containsKey("LITERAL") ?
+                (double) stats.totalLiteralChars / stats.tokenTypeCounts.get("LITERAL") : 0;
+        double avgIdentifierLength = stats.tokenTypeCounts.containsKey("IDENTIFIER") ?
+                (double) stats.totalIdentifierChars / stats.tokenTypeCounts.get("IDENTIFIER") : 0;
 
         // Output results
         System.out.println("Total tokens: " + stats.totalTokens);
