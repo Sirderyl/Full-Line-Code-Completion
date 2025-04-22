@@ -14,19 +14,19 @@ import java.util.*;
 
 public class TokenAnalyzer {
     public static class TokenStats {
-        public int totalTokens;
+        public long totalTokens;
         public Map<String, Integer> tokenTypeCounts;
-        public int totalLiteralChars;
+        public long totalLiteralChars;
         public int maxLiteralChars;
         public List<String> literalValues;
         public Map<String, Integer> literalFrequencies;
-        public int totalIdentifierChars;
+        public long totalIdentifierChars;
         public int maxIdentifierChars;
         public List<String> identifierValues;
         public Map<String, Integer> identifierFrequencies;
-        public int totalBytes;
-        public int totalLiteralBytes;
-        public int totalIdentifierBytes;
+        public long totalBytes;
+        public long totalLiteralBytes;
+        public long totalIdentifierBytes;
     }
 
     public static TokenStats analyze(String javaCode) {
