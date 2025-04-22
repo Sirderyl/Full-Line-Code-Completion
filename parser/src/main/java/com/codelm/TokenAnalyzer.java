@@ -72,7 +72,7 @@ public class TokenAnalyzer {
             int byteLength = text.getBytes(StandardCharsets.UTF_8).length;
             stats.totalBytes += byteLength;
 
-            if (category.equals("LITERAL")) {
+            if (category.equals("LITERAL") && token.getKind() == JavaToken.Kind.STRING_LITERAL.getKind()) {
                 stats.literalValues.add(text);
                 stats.literalFrequencies.put(text, stats.literalFrequencies.getOrDefault(text, 0) + 1);
                 stats.totalLiteralChars += charLength;
