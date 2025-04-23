@@ -19,11 +19,9 @@ public class TokenAnalyzer {
         public long totalLiteralChars;
         public int maxLiteralChars;
         public List<String> literalValues;
-        public Map<String, Integer> literalFrequencies;
         public long totalIdentifierChars;
         public int maxIdentifierChars;
         public List<String> identifierValues;
-        public Map<String, Integer> identifierFrequencies;
         public long totalBytes;
         public long totalLiteralBytes;
         public long totalIdentifierBytes;
@@ -53,9 +51,7 @@ public class TokenAnalyzer {
         stats.totalIdentifierBytes = 0;
 
         stats.literalValues = new ArrayList<>();
-        stats.literalFrequencies = new HashMap<>();
         stats.identifierValues = new ArrayList<>();
-        stats.identifierFrequencies = new HashMap<>();
 
         Optional<JavaToken> optionalToken = Optional.of(tokenRange.get().getBegin());
 
@@ -74,7 +70,6 @@ public class TokenAnalyzer {
 
             if (category.equals("LITERAL") && token.getKind() == JavaToken.Kind.STRING_LITERAL.getKind()) {
                 stats.literalValues.add(text);
-                stats.literalFrequencies.put(text, stats.literalFrequencies.getOrDefault(text, 0) + 1);
                 stats.totalLiteralChars += charLength;
                 stats.totalLiteralBytes += byteLength;
                 if (charLength > stats.maxLiteralChars) {
@@ -82,7 +77,6 @@ public class TokenAnalyzer {
                 }
             } else if (category.equals("IDENTIFIER")) {
                 stats.identifierValues.add(text);
-                stats.identifierFrequencies.put(text, stats.identifierFrequencies.getOrDefault(text, 0) + 1);
                 stats.totalIdentifierChars += charLength;
                 stats.totalIdentifierBytes += byteLength;
                 if (charLength > stats.maxIdentifierChars) {
@@ -139,18 +133,6 @@ public class TokenAnalyzer {
 
             String identifierLog = "src/main/java/com/codelm/logs/identifiers.log";
             Files.write(Paths.get(identifierLog), stats.identifierValues, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-
-            System.out.println("\nTop 10 most frequent literals:");
-            stats.literalFrequencies.entrySet().stream()
-                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                    .limit(10)
-                    .forEach(entry -> System.out.println(entry.getKey() + ": " + entry.getValue()));
-
-            System.out.println("\nTop 10 most frequent identifiers:");
-            stats.identifierFrequencies.entrySet().stream()
-                    .sorted(Map.Entry.<String, Integer>comparingByValue().reversed())
-                    .limit(10)
-                    .forEach(entry -> System.out.println(entry.getKey() + ": " + entry.getValue()));
         } catch (IOException e) {
             System.err.println("Error reading the file: " + e.getMessage());
         }
