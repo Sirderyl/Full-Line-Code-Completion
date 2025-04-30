@@ -1,29 +1,61 @@
 package com.codelm;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 public class ParsingText {
-    public static void main(String[] args) {
-        try {
-            String basePath = "src/main/java/com/codelm/taxi/";
-            String inputPath = basePath + "TaxiRestService.java";
-            String outputPath = basePath + "CleanTaxiRestService.java";
+    private static final String INPUT_DIR = "../data/extracted_java_zip";
+    private static final String OUTPUT_DIR = "../data/cleaned_java_zip";
+    private static final Parser parser = new Parser();
 
-            String javaCode = Files.readString(Paths.get(inputPath));
-            Parser parser = new Parser();
-            String cleanedCode = parser.cleanJavaCode(javaCode);
-            String formattedCode = parser.formatJavaCode(cleanedCode);
+    public static void main(String[] args) throws IOException {
+        Path inputPath = Paths.get(INPUT_DIR);
+        Path outputPath = Paths.get(OUTPUT_DIR);
 
-            //FIMProcessor processor = new FIMProcessor();
-            //String fimCode = processor.splitForFIM(formattedCode);
+        // Get the list of zip files
+        List<Path> zipPaths;
+        try (Stream<Path> stream = Files.list(inputPath)) {
+            zipPaths = stream.sorted().toList();
+        }
 
-            Files.writeString(Paths.get(outputPath), formattedCode);
+        // Iterate through all the zip files in the dataset
+        for (Path zipPath : zipPaths) {
+            String zipName = zipPath.getFileName().toString();
+            Path outputZipPath = outputPath.resolve("processed_" + zipName);
 
-            System.out.println("Cleaned and formatted code written to " + outputPath);
-        } catch (IOException e) {
-            System.err.println("Error reading the file: " + e.getMessage());
+            try (ZipFile zipFile = new ZipFile(zipPath.toFile());
+                 ZipOutputStream zos = new ZipOutputStream(new FileOutputStream(outputZipPath.toFile()))) {
+
+                for (ZipEntry entry : Collections.list(zipFile.entries())) {
+                    if (entry.getName().endsWith(".java")) {
+                        String fileName = entry.getName();
+                        try {
+                            String content = new String(zipFile.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
+                            if (!GarbageFileFilter.isGarbage(fileName, content)) {
+                                String processedContent = parser.cleanJavaCode(content);
+                                zos.putNextEntry(new ZipEntry(fileName));
+                                zos.write(processedContent.getBytes(StandardCharsets.UTF_8));
+                                zos.closeEntry();
+                            }
+                        } catch (Exception e) {
+                            System.err.println("Error processing file " + fileName + " in " + zipName + ": " + e.getMessage());
+                        }
+                    }
+                }
+            } catch (Exception e) {
+                System.err.println("Error processing " + zipName + ": " + e.getMessage());
+            }
         }
     }
 }
