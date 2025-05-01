@@ -8,7 +8,7 @@ public class ParseTest {
     public static void main(String[] args) {
         try {
             String basePath = "../data/";
-            String fileName = "009_10683748.java";
+            String fileName = "NewsletterDao_80001.java";
             String inputPath = basePath + fileName;
             String outputPath = basePath + "CleanTaxiRestService.java";
 
