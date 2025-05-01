@@ -44,8 +44,9 @@ public class ParsingText {
                             String content = new String(zipFile.getInputStream(entry).readAllBytes(), StandardCharsets.UTF_8);
                             if (!GarbageFileFilter.isGarbage(fileName, content)) {
                                 String processedContent = parser.cleanJavaCode(content);
+                                String formattedCode = parser.formatJavaCode(processedContent);
                                 zos.putNextEntry(new ZipEntry(fileName));
-                                zos.write(processedContent.getBytes(StandardCharsets.UTF_8));
+                                zos.write(formattedCode.getBytes(StandardCharsets.UTF_8));
                                 zos.closeEntry();
                             }
                         } catch (Exception e) {

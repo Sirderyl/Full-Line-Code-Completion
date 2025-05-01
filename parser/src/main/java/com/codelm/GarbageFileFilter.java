@@ -53,9 +53,4 @@ public class GarbageFileFilter {
             return true; // Parsing failed (encrypted or malformed code)
         }
     }
-
-    private static boolean hasMeaningfulName(String fileName) {
-        String nameWithoutExtension = fileName.replace(".java", "");
-        return nameWithoutExtension.matches(".*[a-zA-Z]+.*") && !nameWithoutExtension.matches("[0-9_]+");
-    }
 }
