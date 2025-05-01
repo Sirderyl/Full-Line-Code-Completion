@@ -50,7 +50,7 @@ public class GarbageFileFilter {
             }
             return false;
         } catch (Exception e) {
-            return true; // Parsing failed (encrypted or malformed code)
+            return false; // Includes normal files with repo tags at beginning, missing imports etc...
         }
     }
 }
