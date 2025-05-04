@@ -8,9 +8,9 @@ public class ParseTest {
     public static void main(String[] args) {
         try {
             String basePath = "../data/";
-            String fileName = "NewsletterDao_80001.java";
+            String fileName = "TaxiRestService.java";
             String inputPath = basePath + fileName;
-            String outputPath = basePath + "CleanTaxiRestService.java";
+            String outputPath = basePath + "Cleaned.java";
 
             String javaCode = Files.readString(Paths.get(inputPath));
             System.out.println(GarbageFileFilter.isGarbage(fileName, javaCode));
@@ -22,7 +22,7 @@ public class ParseTest {
             //FIMProcessor processor = new FIMProcessor();
             //String fimCode = processor.splitForFIM(formattedCode);
 
-            //Files.writeString(Paths.get(outputPath), formattedCode);
+            Files.writeString(Paths.get(outputPath), formattedCode);
 
             System.out.println("Cleaned and formatted code written to " + outputPath);
         } catch (IOException e) {
