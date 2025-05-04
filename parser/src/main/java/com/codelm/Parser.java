@@ -41,10 +41,14 @@ public class Parser {
     }
 
     private String removePrefixLines(String javaCode) {
-        String[] lines = javaCode.split("\n");
+        String normalizedCode = javaCode.replace("\r\n", "\n");
+        normalizedCode = normalizedCode.replace("\r", "\n");
+
+        String[] lines = normalizedCode.split("\n");
         int startIndex = 0;
         for (String line : lines) {
-            if (JAVA_CODE_START.matcher(line).matches()) {
+            String trimmedLine = line.trim();
+            if (JAVA_CODE_START.matcher(trimmedLine).matches()) {
                 break;
             }
             startIndex++;
