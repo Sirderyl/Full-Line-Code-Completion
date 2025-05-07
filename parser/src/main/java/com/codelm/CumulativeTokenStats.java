@@ -11,7 +11,7 @@ import java.util.Map;
 public class CumulativeTokenStats {
 
     private long totalTokens;
-    private Map<String, Integer> tokenTypeCounts;
+    private Map<String, Long> tokenTypeCounts;
     private long totalLiteralChars;
     private int maxLiteralChars;
     private long totalStringLiterals;
@@ -40,7 +40,7 @@ public class CumulativeTokenStats {
         for (Map.Entry<String, Integer> entry : stats.tokenTypeCounts.entrySet()) {
             String key = entry.getKey();
             int value = entry.getValue();
-            tokenTypeCounts.put(key, tokenTypeCounts.getOrDefault(key, 0) + value);
+            tokenTypeCounts.put(key, tokenTypeCounts.getOrDefault(key, 0L) + value);
         }
 
         totalLiteralChars += stats.totalLiteralChars;
@@ -66,13 +66,13 @@ public class CumulativeTokenStats {
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(filePath))) {
             writer.write("Total tokens: " + totalTokens + "\n");
             writer.write("Token type breakdown:\n");
-            for (Map.Entry<String, Integer> entry : tokenTypeCounts.entrySet()) {
+            for (Map.Entry<String, Long> entry : tokenTypeCounts.entrySet()) {
                 writer.write(entry.getKey() + ": " + entry.getValue() + "\n");
             }
 
             // Calculating the average literal/identifier lengths
             double avgLiteralLength = totalStringLiterals > 0 ? (double) totalLiteralChars / totalStringLiterals : 0;
-            double avgIdentifierLength = tokenTypeCounts.getOrDefault("IDENTIFIER", 0) > 0 ?
+            double avgIdentifierLength = tokenTypeCounts.getOrDefault("IDENTIFIER", 0L) > 0 ?
                     (double) totalIdentifierChars / tokenTypeCounts.get("IDENTIFIER") : 0;
 
             writer.write("\nLiteral stats:\n");

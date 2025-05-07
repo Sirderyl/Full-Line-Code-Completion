@@ -19,12 +19,13 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ParsingText {
-    private static final String INPUT_DIR = "../data/test1";
+    private static final String INPUT_DIR = "../data/test";
     private static final String OUTPUT_DIR = "../data/cleaned_java_zip";
     private static final String STATS_FILE = "../data/analysis_output/token_stats.txt";
     private static final String LITERALS_LOG = "../data/analysis_output/literals.log";
@@ -95,8 +96,22 @@ public class ParsingText {
                     for (Future<Result> future : futures) {
                         Result result = future.get();
                         if (result != null) {
-                            zos.putNextEntry(new ZipEntry(result.fileName));
-                            zos.write(result.formattedCode.getBytes(StandardCharsets.UTF_8));
+                            // Convert formatted code to bytes for writing into zip files
+                            byte[] data = result.formattedCode.getBytes(StandardCharsets.UTF_8);
+
+                            // Configuring ZipEntry for uncompressed processing
+                            ZipEntry entry = new ZipEntry(result.fileName);
+                            entry.setMethod(ZipEntry.STORED);
+                            entry.setSize(data.length);
+
+                            // Calculate CRC-32 checksum (needed for writing uncompressed zip files)
+                            CRC32 crc = new CRC32();
+                            crc.update(data);
+                            entry.setCrc(crc.getValue());
+
+                            // Write to output zip
+                            zos.putNextEntry(entry);
+                            zos.write(data);
                             zos.closeEntry();
 
                             if (result.stats != null) {
