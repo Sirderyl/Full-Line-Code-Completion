@@ -5,6 +5,9 @@ import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.TokenRange;
 import com.github.javaparser.ast.CompilationUnit;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -18,6 +21,7 @@ public class TokenAnalyzer {
         public Map<String, Integer> tokenTypeCounts;
         public long totalLiteralChars;
         public int maxLiteralChars;
+        public int stringLiteralCount;
         public List<String> literalValues;
         public long totalIdentifierChars;
         public int maxIdentifierChars;
@@ -27,7 +31,7 @@ public class TokenAnalyzer {
         public long totalIdentifierBytes;
     }
 
-    public static TokenStats analyze(String javaCode) {
+    public static TokenStats analyze(String javaCode) throws IOException {
         CompilationUnit cu = StaticJavaParser.parse(javaCode);
         Optional<TokenRange> tokenRange = cu.getTokenRange();
         if (tokenRange.isEmpty()) {
@@ -43,6 +47,7 @@ public class TokenAnalyzer {
         // Literal/Identifier stats
         stats.totalLiteralChars = 0;
         stats.maxLiteralChars = 0;
+        stats.stringLiteralCount = 0;
         stats.totalIdentifierChars = 0;
         stats.maxIdentifierChars = 0;
 
@@ -94,25 +99,29 @@ public class TokenAnalyzer {
                 (double) stats.totalIdentifierChars / stats.tokenTypeCounts.get("IDENTIFIER") : 0;
 
         // Output results
-        System.out.println("Total tokens: " + stats.totalTokens);
-        System.out.println("Token type breakdown:");
-        for (Map.Entry<String, Integer> entry : stats.tokenTypeCounts.entrySet()) {
-            System.out.println(entry.getKey() + ": " + entry.getValue());
+        String outputResults = "src/main/java/com/codelm/logs/output_results.txt";
+
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputResults))) {
+            writer.write("Total tokens: " + stats.totalTokens + "\n");
+            writer.write("Token type breakdown:\n");
+            for (Map.Entry<String, Integer> entry : stats.tokenTypeCounts.entrySet()) {
+                writer.write(entry.getKey() + ": " + entry.getValue() + "\n");
+            }
+
+            writer.write("\nLiteral stats:\n");
+            writer.write("Total literal bytes: " + stats.totalLiteralBytes + "\n");
+            writer.write("Total literal chars: " + stats.totalLiteralChars + "\n");
+            writer.write("Average literal chars: " + avgLiteralLength + "\n");
+            writer.write("Max literal chars: " + stats.maxLiteralChars + "\n");
+
+            writer.write("\nIdentifier stats:\n");
+            writer.write("Total identifier bytes: " + stats.totalIdentifierBytes + "\n");
+            writer.write("Total identifier chars: " + stats.totalIdentifierChars + "\n");
+            writer.write("Average identifier chars: " + avgIdentifierLength + "\n");
+            writer.write("Max identifier chars: " + stats.maxIdentifierChars + "\n");
+
+            writer.write("\nTotal bytes (all tokens): " + stats.totalBytes + "\n");
         }
-
-        System.out.println("\nLiteral stats:");
-        System.out.println("Total literal bytes: " + stats.totalLiteralBytes);
-        System.out.println("Total literal chars: " + stats.totalLiteralChars);
-        System.out.println("Average literal chars: " + avgLiteralLength);
-        System.out.println("Max literal chars: " + stats.maxLiteralChars);
-
-        System.out.println("\nIdentifier stats:");
-        System.out.println("Total identifier bytes: " + stats.totalIdentifierBytes);
-        System.out.println("Total identifier chars: " + stats.totalIdentifierChars);
-        System.out.println("Average identifier chars: " + avgIdentifierLength);
-        System.out.println("Max identifier chars: " + stats.maxIdentifierChars);
-
-        System.out.println("\nTotal bytes (all tokens): " + stats.totalBytes);
 
         return stats;
     }
