@@ -6,6 +6,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -21,6 +23,8 @@ public class DatasetMetrics {
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
 
     public static void main(String[] args) throws IOException {
+        Instant start = Instant.now();
+
         String dirPath = "../data/test";
         boolean filterGarbage = true;
 
@@ -61,7 +65,12 @@ public class DatasetMetrics {
             }
         }
 
+        Instant end = Instant.now();
+        long duration = Duration.between(start, end).toMinutes();
+
         System.out.println("\nTotal Java files: " + count.get());
         System.out.println("Total size: " + totalSize.get() + " MB");
+        Files.writeString(Paths.get(dirPath, "dataset_metrics_filter.txt"), "Total Java files: " +
+                count.get() + "\n" + "Total size: " + totalSize.get() + " MB" + "\n" + "It took " + duration + " mins");
     }
 }
