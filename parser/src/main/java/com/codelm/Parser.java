@@ -6,6 +6,7 @@ import com.github.javaparser.ast.Node;
 import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.printer.DefaultPrettyPrinter;
+import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -21,7 +22,11 @@ public class Parser {
     public String cleanJavaCode(String javaCode) {
         String noPrefixCode = removePrefixLines(javaCode);
 
-        CompilationUnit cu = StaticJavaParser.parse(noPrefixCode);
+        // Calling formatJavaCode as it shifts in-line comments which otherwise would not get picked up by getAllComments()
+        CompilationUnit cu = StaticJavaParser.parse(formatJavaCode(noPrefixCode));
+
+        // For in-line comment removal which would not get picked up
+        //LexicalPreservingPrinter.setup(cu);
 
         // Remove comments
         cu.getAllComments().forEach(Comment::remove);
@@ -37,7 +42,7 @@ public class Parser {
         // Remove annotation member declarations
         //cu.findAll(AnnotationMemberDeclaration.class).forEach(Node::remove);
 
-        return cu.toString().replaceAll("\\s+", " ");
+        return cu.toString();
     }
 
     private String removePrefixLines(String javaCode) {

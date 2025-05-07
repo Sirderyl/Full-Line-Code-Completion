@@ -8,7 +8,7 @@ public class ParseTest {
     public static void main(String[] args) {
         try {
             String basePath = "../data/";
-            String fileName = "TaxiRestService.java";
+            String fileName = "LinkBenchRequest_65.java";
             String inputPath = basePath + fileName;
             String outputPath = basePath + "Cleaned.java";
 
