@@ -74,6 +74,7 @@ public class TokenAnalyzer {
             stats.totalBytes += byteLength;
 
             if (category.equals("LITERAL") && token.getKind() == JavaToken.Kind.STRING_LITERAL.getKind()) {
+                stats.stringLiteralCount++;
                 stats.literalValues.add(text);
                 stats.totalLiteralChars += charLength;
                 stats.totalLiteralBytes += byteLength;
@@ -90,37 +91,6 @@ public class TokenAnalyzer {
             }
 
             optionalToken = token.getNextToken();
-        }
-
-        // Calculating the average literal/identifier lengths
-        double avgLiteralLength = stats.tokenTypeCounts.containsKey("LITERAL") ?
-                (double) stats.totalLiteralChars / stats.tokenTypeCounts.get("LITERAL") : 0;
-        double avgIdentifierLength = stats.tokenTypeCounts.containsKey("IDENTIFIER") ?
-                (double) stats.totalIdentifierChars / stats.tokenTypeCounts.get("IDENTIFIER") : 0;
-
-        // Output results
-        String outputResults = "src/main/java/com/codelm/logs/output_results.txt";
-
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter(outputResults))) {
-            writer.write("Total tokens: " + stats.totalTokens + "\n");
-            writer.write("Token type breakdown:\n");
-            for (Map.Entry<String, Integer> entry : stats.tokenTypeCounts.entrySet()) {
-                writer.write(entry.getKey() + ": " + entry.getValue() + "\n");
-            }
-
-            writer.write("\nLiteral stats:\n");
-            writer.write("Total literal bytes: " + stats.totalLiteralBytes + "\n");
-            writer.write("Total literal chars: " + stats.totalLiteralChars + "\n");
-            writer.write("Average literal chars: " + avgLiteralLength + "\n");
-            writer.write("Max literal chars: " + stats.maxLiteralChars + "\n");
-
-            writer.write("\nIdentifier stats:\n");
-            writer.write("Total identifier bytes: " + stats.totalIdentifierBytes + "\n");
-            writer.write("Total identifier chars: " + stats.totalIdentifierChars + "\n");
-            writer.write("Average identifier chars: " + avgIdentifierLength + "\n");
-            writer.write("Max identifier chars: " + stats.maxIdentifierChars + "\n");
-
-            writer.write("\nTotal bytes (all tokens): " + stats.totalBytes + "\n");
         }
 
         return stats;
