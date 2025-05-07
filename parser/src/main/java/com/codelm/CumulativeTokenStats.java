@@ -15,10 +15,8 @@ public class CumulativeTokenStats {
     private long totalLiteralChars;
     private int maxLiteralChars;
     private long totalStringLiterals;
-    public List<String> literalValues;
     private long totalIdentifierChars;
     private int maxIdentifierChars;
-    public List<String> identifierValues;
     private long totalBytes;
     private long totalLiteralBytes;
     private long totalIdentifierBytes;
@@ -29,10 +27,8 @@ public class CumulativeTokenStats {
         this.totalLiteralChars = 0;
         this.maxLiteralChars = 0;
         this.totalStringLiterals = 0;
-        this.literalValues = new ArrayList<>();
         this.totalIdentifierChars = 0;
         this.maxIdentifierChars = 0;
-        this.identifierValues = new ArrayList<>();
         this.totalBytes = 0;
         this.totalLiteralBytes = 0;
         this.totalIdentifierBytes = 0;
@@ -55,15 +51,11 @@ public class CumulativeTokenStats {
 
         totalStringLiterals += stats.stringLiteralCount;
 
-        literalValues.addAll(stats.literalValues);
-
         totalIdentifierChars += stats.totalIdentifierChars;
 
         if (stats.maxIdentifierChars > maxIdentifierChars) {
             maxIdentifierChars = stats.maxIdentifierChars;
         }
-
-        identifierValues.addAll(stats.identifierValues);
 
         totalBytes += stats.totalBytes;
         totalLiteralBytes += stats.totalLiteralBytes;

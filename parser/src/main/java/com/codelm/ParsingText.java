@@ -1,5 +1,6 @@
 package com.codelm;
 
+import java.io.BufferedWriter;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -39,6 +40,12 @@ public class ParsingText {
         Path inputPath = Paths.get(INPUT_DIR);
         Path outputPath = Paths.get(OUTPUT_DIR);
         CumulativeTokenStats cStats = new CumulativeTokenStats();
+
+        // Clear log files at the start
+        Files.write(Paths.get(LITERALS_LOG), new ArrayList<>(), StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING);
+        Files.write(Paths.get(IDENTIFIERS_LOG), new ArrayList<>(), StandardOpenOption.CREATE,
+                StandardOpenOption.TRUNCATE_EXISTING);
 
         // Get the list of zip files
         List<Path> zipPaths;
@@ -94,6 +101,8 @@ public class ParsingText {
 
                             if (result.stats != null) {
                                 cStats.update(result.stats);
+                                appendToFile(LITERALS_LOG, result.stats.literalValues);
+                                appendToFile(IDENTIFIERS_LOG, result.stats.identifierValues);
                             }
                         }
                     }
@@ -108,13 +117,20 @@ public class ParsingText {
         }
 
         cStats.writeStatsToFile(STATS_FILE);
-        Files.write(Paths.get(LITERALS_LOG), cStats.literalValues, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
-        Files.write(Paths.get(IDENTIFIERS_LOG), cStats.identifierValues, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING);
 
         Instant end = Instant.now();
         long duration = Duration.between(start, end).toMinutes();
 
-        Files.writeString(Paths.get(STATS_FILE), "It took " + duration + " minutes", StandardOpenOption.APPEND);
+        Files.writeString(Paths.get(STATS_FILE), "\nIt took " + duration + " minutes", StandardOpenOption.APPEND);
+    }
+
+    private static void appendToFile(String filePath, List<String> values) throws IOException {
+        try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(filePath), StandardOpenOption.APPEND)) {
+            for (String value : values) {
+                writer.write(value);
+                writer.newLine();
+            }
+        }
     }
 
     private static void updateProgress(int processed, int total, Instant start) {
@@ -124,8 +140,8 @@ public class ParsingText {
         long remaining = estimatedTotal - elapsed;
 
         String bar = "[" + "=".repeat(percent / 2) + " ".repeat(50 - percent / 2) + "]";
-        System.out.printf("\r%s %d%% complete | Elapsed: %s | Remaining: %s",
-                bar, percent, formatTime(elapsed), formatTime(remaining));
+        System.out.printf("\r%s %d%% complete | Processed zips: %d | Elapsed: %s | Remaining: %s",
+                bar, percent, processed, formatTime(elapsed), formatTime(remaining));
     }
 
     private static String formatTime(long millis) {
