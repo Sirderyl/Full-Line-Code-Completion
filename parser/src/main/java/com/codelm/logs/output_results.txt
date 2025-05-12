@@ -1,0 +1,23 @@
+Total tokens: 2342
+Token type breakdown:
+EOL: 134
+OPERATOR: 57
+LITERAL: 30
+SEPARATOR: 503
+KEYWORD: 89
+IDENTIFIER: 372
+WHITESPACE_NO_EOL: 1157
+
+Literal stats:
+Total literal bytes: 509
+Total literal chars: 509
+Average literal chars: 16.966666666666665
+Max literal chars: 53
+
+Identifier stats:
+Total identifier bytes: 3071
+Total identifier chars: 3071
+Average identifier chars: 8.255376344086022
+Max identifier chars: 28
+
+Total bytes (all tokens): 6012

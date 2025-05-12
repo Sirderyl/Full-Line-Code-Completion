@@ -1,0 +1,14 @@
+"Bad Request": 3
+"This registration already exists. It must be unique": 2
+"Taxi with id ": 2
+"Taxi details already in use": 2
+"registration": 2
+" not found": 2
+"updateTaxi completed. Taxi = ": 1
+"Number of seats must be between 2 and 20": 1
+"No taxi with registration found: ": 1
+"Invalid Taxi supplied": 1
+"getTaxiById ": 1
+"deleteTaxi completed. Taxi = ": 1
+"createTaxi completed. Taxi = ": 1
+": found Taxi = ": 1
