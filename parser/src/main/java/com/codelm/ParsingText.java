@@ -25,7 +25,7 @@ import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
 public class ParsingText {
-    private static final String INPUT_DIR = "../data/test";
+    private static final String INPUT_DIR = "../data/extracted_java_zip";
     private static final String OUTPUT_DIR = "../data/cleaned_java_zip";
     private static final String STATS_FILE = "../data/analysis_output/token_stats.txt";
     private static final String LITERALS_LOG = "../data/analysis_output/literals.log";
