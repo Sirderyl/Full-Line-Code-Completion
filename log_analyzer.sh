@@ -17,7 +17,7 @@ count_frequencies() {
 }
 
 # Paths to logs and output files (paths adjusted for WSL)
-literals_log="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/sample.log"
+literals_log="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/literals.log"
 identifiers_log="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/identifiers.log"
 literals_output="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/literals_count.txt"
 identifiers_output="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/identifiers_count.txt"
