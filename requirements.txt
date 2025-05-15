@@ -6,3 +6,6 @@ accelerate
 timm
 ipykernel
 ipywidgets
+Cython
+wheel
+poetry
