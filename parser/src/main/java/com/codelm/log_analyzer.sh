@@ -19,8 +19,8 @@ count_frequencies() {
 # Paths to logs and output files (paths adjusted for WSL)
 literals_log="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/sample.log"
 identifiers_log="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/identifiers.log"
-literals_output="/mnt/d/temp/literals_count3.txt"
-identifiers_output="/mnt/d/temp/identifiers_count.txt"
+literals_output="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/literals_count.txt"
+identifiers_output="/mnt/c/Users/spide/Desktop/Repos/Full-Line-Code-Completion/data/analysis_output/identifiers_count.txt"
 
 # Count frequencies of literals and identifiers (this may take hours)
 count_frequencies "$literals_log" "$literals_output" "literals"

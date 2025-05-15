@@ -1,4 +1,5 @@
 .venv
+.linuxenv
 .vscode
 .vscodeignore
 data
