@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 
 file_dir = "./data/clean_extract/processed_part_0000"
 identifiers_file = "./data/analysis_output/identifiers_weighted_count.txt"
-output_dir = path.Path("bpe_models")
+output_dir = path.Path("bpe_models_test2")
 output_dir.mkdir(exist_ok=True)
 
 vocab_size = 16000
@@ -48,7 +48,7 @@ for k in k_values:
         vocab_size=vocab_size,
         user_defined_symbols=top_k_identifiers,
         model_type="bpe",
-        character_coverage=1.0
+        #character_coverage=1.0
     )
 
     # Load the trained model
@@ -66,6 +66,7 @@ for k in k_values:
     token_counts.append(total_tokens)
     print(f"K = {k}, Total tokens: {total_tokens}")
 
+'''
 # Plot results
 plt.plot(k_values, token_counts, marker='o')
 plt.xlabel("Number of Reserved Identifiers (K)")
@@ -74,3 +75,4 @@ plt.title("Token Count vs. Reserved Identifier Size")
 plt.grid(True)
 plt.savefig("token_count_vs_k.png")
 print("Plot saved as 'token_count_vs_k.png'")
+'''
