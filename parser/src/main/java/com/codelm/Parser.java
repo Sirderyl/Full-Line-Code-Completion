@@ -1,5 +1,6 @@
 package com.codelm;
 
+import com.codelm.antlr.JavaLexer;
 import com.github.javaparser.StaticJavaParser;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.Node;
@@ -7,6 +8,10 @@ import com.github.javaparser.ast.comments.Comment;
 import com.github.javaparser.ast.nodeTypes.NodeWithAnnotations;
 import com.github.javaparser.printer.DefaultPrettyPrinter;
 import com.github.javaparser.printer.lexicalpreservation.LexicalPreservingPrinter;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.Token;
 
 import java.util.Arrays;
 import java.util.regex.Pattern;
@@ -65,5 +70,21 @@ public class Parser {
         CompilationUnit cu = StaticJavaParser.parse(cleanCode);
         DefaultPrettyPrinter printer = new DefaultPrettyPrinter();
         return printer.print(cu);
+    }
+
+    public String retokenize(String rawCode) {
+        CharStream input = CharStreams.fromString(rawCode);
+        JavaLexer lexer = new JavaLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        tokens.fill();
+
+        StringBuilder output = new StringBuilder();
+        for (Token token : tokens.getTokens()) {
+            if (token.getType() != Token.EOF) {
+                output.append(token.getText()).append(" ");
+            }
+        }
+
+        return output.toString().trim();
     }
 }

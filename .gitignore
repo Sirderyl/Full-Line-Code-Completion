@@ -3,3 +3,7 @@
 .vscode
 .vscodeignore
 data
+logs
+bpe_models_test
+bpe_models_test2
+yttm_models_test

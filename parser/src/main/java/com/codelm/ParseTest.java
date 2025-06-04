@@ -25,6 +25,9 @@ public class ParseTest {
             Files.writeString(Paths.get(outputPath), formattedCode);
 
             System.out.println("Cleaned and formatted code written to " + outputPath);
+
+            String code = "publicvoidrun(){}";
+            System.out.println(parser.retokenize(code));
         } catch (IOException e) {
             System.err.println("Error reading the file: " + e.getMessage());
         }
