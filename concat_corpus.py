@@ -1,7 +1,7 @@
 import os
 
 file_dir = "./data/clean_extract/processed_part_0000"
-output = "./data/clean_extract/corpus3.txt"
+output = "./data/clean_extract/corpus4.txt"
 
 print("Collecting Java files...")
 java_files_paths = [os.path.join(file_dir, f) for f in os.listdir(file_dir) if f.endswith('.java')]
@@ -23,8 +23,7 @@ with open(output, "w", encoding="utf-8") as outfile:
                 for line in lines:
                     stripped_line = line.strip()
                     if stripped_line:
-                        words = stripped_line.split()
-                        stripped_line = stripped_line.replace(" ", "") # Remove all spaces
+                        stripped_line = stripped_line.replace(" ", "\u200B") # Remove all spaces
                         processed_lines.append(stripped_line)
                 
                 if processed_lines:

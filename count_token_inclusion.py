@@ -34,3 +34,4 @@ for identifier in identifiers:
 
 print(f"\nNumber of top {len(identifiers)} included in vocab: {included_count}")
 print(f"Percent included: {(included_count / len(identifiers) * 100):.2f}%")
+print(f"10 Not included identifiers: {not_included_identifiers[:10]}")
