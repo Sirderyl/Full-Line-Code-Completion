@@ -6,10 +6,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.Vocabulary;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -47,11 +44,9 @@ public class ModelTokenCodec {
     public static final String FALSE_TOKEN_KEY = "!LEX_FALSE";
     private short newlineId = -1;
 
-    public ModelTokenCodec() {
+    public ModelTokenCodec() throws IOException {
         // New line token for line preservation in binary files and store the ID
         _addTokenToMap(NEWLINE_TOKEN_KEY, "\n"); // ID 0
-        _addTokenToMap(TRUE_TOKEN_KEY, "true"); // ID 1
-        _addTokenToMap(FALSE_TOKEN_KEY, "false"); // ID 2
 
         this.newlineId = encodingMap.get(NEWLINE_TOKEN_KEY).id;
 
@@ -60,9 +55,9 @@ public class ModelTokenCodec {
             _addTokenToMap(asciiCharToModelTokenKey(c));
         }
 
-        /**
-         * Add control characters? e.g. \t, \n as !LEX_TAB, !LEX_NEWLINE...
-         */
+        // Adding binary literal tokens so they are not added as individual characters
+        _addTokenToMap(TRUE_TOKEN_KEY, "true");
+        _addTokenToMap(FALSE_TOKEN_KEY, "false");
 
         // ANTLR lexer token types
         for (int i = 1; i <= antlrVocabulary.getMaxTokenType(); i++) {
@@ -81,7 +76,18 @@ public class ModelTokenCodec {
                 System.err.println("Null symbolic name!");
             }
         }
+
+        int mapSizeBeforeIdents = decodingTable.size();
+
+        List<String> identifiers = getIdentifiers(507);
+        for (String identifier : identifiers) {
+            _addTokenToMap(identifier);
+        }
+
+        int identsAdded = decodingTable.size() - mapSizeBeforeIdents;
+
         System.out.println("Initialized ModelTokenCodec. Vocabulary size: " + decodingTable.size());
+        System.out.println("Number of identifiers added: " + identsAdded);
     }
 
     private void _addTokenToMap(String key, String value) {
@@ -105,7 +111,7 @@ public class ModelTokenCodec {
         return "!LEX_" + symbolicName;
     }
 
-    public static String asciiCharToModelTokenKey(char c) {
+    public String asciiCharToModelTokenKey(char c) {
         // For BPE, we want to represent all characters that can appear in identifiers
         if (c >= CHAR_MIN_VALUE && c <= CHAR_MAX_VALUE) {
             return Character.toString(c);
@@ -113,6 +119,24 @@ public class ModelTokenCodec {
 
         // replace things outside the subset of ascii with a safe alternative value.
         return Character.toString(CHAR_SUBSTITUTE);
+    }
+
+    public List<String> getIdentifiers(int count) throws IOException {
+        String identifiersFilePath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\analysis_output\\identifiers_weighted_count.txt";
+
+        FileReader fr = new FileReader(identifiersFilePath);
+        BufferedReader br = new BufferedReader(fr);
+
+        List<String> identifiers = new ArrayList<>();
+        String line;
+        String identifier;
+        for (int i = 0; i < count; i++) {
+            line = br.readLine();
+            identifier = line.split(":")[0];
+            identifiers.add(identifier);
+        }
+
+        return identifiers;
     }
 
     public ByteBuffer encode(List<Token> antlrTokens) {
@@ -149,22 +173,6 @@ public class ModelTokenCodec {
                 continue;
             }
 
-            byteBuffer.putShort(modelToken.id);
-
-            if (tokenType == JavaLexer.IDENTIFIER) {
-                for (char c : token.getText().toCharArray()) {
-                    tokenKey = asciiCharToModelTokenKey(c);
-                    modelToken = encodingMap.get(tokenKey);
-                    if (modelToken != null) {
-                        byteBuffer.putShort(modelToken.id);
-                    } else {
-                        System.err.println("No ModelToken for identifier char: '" + c +
-                                "' (key: " + tokenKey + "). Skipping char.");
-                        // Add an <UNK_CHAR> token ID?
-                    }
-                }
-            }
-
             if (tokenType == JavaLexer.BOOL_LITERAL) {
                 if (token.getText().equals("true")) {
                     modelToken = encodingMap.get(TRUE_TOKEN_KEY);
@@ -176,7 +184,33 @@ public class ModelTokenCodec {
                 } else {
                     System.err.println("No ModelToken for bool literal.");
                 }
+                continue;
             }
+
+            if (tokenType == JavaLexer.IDENTIFIER) {
+                ModelToken identToken = encodingMap.get(token.getText());
+                if (identToken != null) {
+                    // Just put the found identifier ID from the map
+                    byteBuffer.putShort(identToken.id);
+                } else {
+                    // If not found, put !LEX_IDENTIFIER first and then all the characters of the ident
+                    byteBuffer.putShort(modelToken.id);
+                    for (char c : token.getText().toCharArray()) {
+                        tokenKey = asciiCharToModelTokenKey(c);
+                        modelToken = encodingMap.get(tokenKey);
+                        if (modelToken != null) {
+                            byteBuffer.putShort(modelToken.id);
+                        } else {
+                            System.err.println("No ModelToken for identifier char: '" + c +
+                                    "' (key: " + tokenKey + "). Skipping char.");
+                            // Add an <UNK_CHAR> token ID?
+                        }
+                    }
+                }
+                continue;
+            }
+
+            byteBuffer.putShort(modelToken.id);
         }
         return byteBuffer;
     }
@@ -194,7 +228,6 @@ public class ModelTokenCodec {
         short binaryLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.BINARY_LITERAL)).id;
         short floatLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.FLOAT_LITERAL)).id;
         short hexFloatLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.HEX_FLOAT_LITERAL)).id;
-        short boolLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.BOOL_LITERAL)).id;
         short charLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.CHAR_LITERAL)).id;
         short stringLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.STRING_LITERAL)).id;
         short textBlockId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.TEXT_BLOCK)).id;
@@ -228,9 +261,6 @@ public class ModelTokenCodec {
                     sb.append(" ");
                 }
                 inIdentifier = true;
-                continue;
-            }
-            if (id == boolLiteralId) {
                 continue;
             }
 
@@ -276,7 +306,11 @@ public class ModelTokenCodec {
         StringBuilder sb = new StringBuilder();
         while (byteBuffer.hasRemaining()) {
             short id = byteBuffer.getShort();
-            sb.append(id).append(" ");
+            if (this.newlineId != -1 && id == newlineId) {
+                sb.append(id).append("\n");
+            } else {
+                sb.append(id).append(" ");
+            }
         }
         return sb.toString().trim();
     }
@@ -299,11 +333,11 @@ public class ModelTokenCodec {
 
         String javaInput;
 
-        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\";
-        String corpusInputPath = dirPath + "corpus2.txt";
-        String corpusBinaryOutputPath = dirPath + "corpus2_encoded.dat";
-        String idCorpusDecodedOutputPath = dirPath + "corpus2_ids.txt";
-        String corpusDecodedInputPath = dirPath + "corpus2_decoded.txt";
+        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\with_idents\\";
+        String corpusInputPath = dirPath + "corpus2_small.txt";
+        String corpusBinaryOutputPath = dirPath + "corpus2_small_encoded.dat";
+        String idCorpusDecodedOutputPath = dirPath + "corpus2_small_ids.txt";
+        String corpusDecodedInputPath = dirPath + "corpus2_small_decoded.txt";
 
         File inputFile = new java.io.File(corpusInputPath);
 
@@ -346,21 +380,30 @@ public class ModelTokenCodec {
         }
 
         /*
+        String mapVocabPath = dirPath + "mapVocabWithIdents.txt";
+        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        for (String key : codec.encodingMap.keySet()) {
+            ModelToken token = codec.encodingMap.get(key);
+            sb.append(i).append(" ").append(key).append("\n");
+            i++;
+        }
+        Files.writeString(Paths.get(mapVocabPath), sb.toString());
+
+         */
 
         bufferToDecode.rewind();
 
         String reconstructedJava = codec.decode(bufferToDecode);
 
-        Parser parser = new Parser();
-        reconstructedJava = parser.formatJavaCode(reconstructedJava);
+        //Parser parser = new Parser();
+        //reconstructedJava = parser.formatJavaCode(reconstructedJava);
 
         try {
             Files.writeString(Paths.get(corpusDecodedInputPath), reconstructedJava);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-
-         */
 
         /*
         System.out.println(input2);
