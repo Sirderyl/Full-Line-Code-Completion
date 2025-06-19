@@ -79,7 +79,7 @@ public class ModelTokenCodec {
 
         int mapSizeBeforeIdents = decodingTable.size();
 
-        List<String> identifiers = getIdentifiers(507);
+        List<String> identifiers = getIdentifiers(507); // 507 as some idents are a single char - won't get added to HashMap
         for (String identifier : identifiers) {
             _addTokenToMap(identifier);
         }
@@ -327,17 +327,20 @@ public class ModelTokenCodec {
     }
 
     public static void main(String[] args) throws IOException {
+        /*
         String input = "public static void foo(String bar) {}";
         String input2 = "public String input = \"test string123\";";
         String input3 = "public Integer i = new Integer(35);";
+        String input4 = "SharedPreferences";
+         */
 
         String javaInput;
 
-        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\with_idents\\";
-        String corpusInputPath = dirPath + "corpus2_small.txt";
-        String corpusBinaryOutputPath = dirPath + "corpus2_small_encoded.dat";
-        String idCorpusDecodedOutputPath = dirPath + "corpus2_small_ids.txt";
-        String corpusDecodedInputPath = dirPath + "corpus2_small_decoded.txt";
+        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\with_idents_50\\";
+        String corpusInputPath = dirPath + "corpus2.txt";
+        String corpusBinaryOutputPath = dirPath + "corpus2_encoded.dat";
+        String idCorpusDecodedOutputPath = dirPath + "corpus2_ids.txt";
+        String corpusDecodedInputPath = dirPath + "corpus2_decoded.txt";
 
         File inputFile = new java.io.File(corpusInputPath);
 
@@ -380,6 +383,15 @@ public class ModelTokenCodec {
         }
 
         /*
+        ModelTokenCodec codec = new ModelTokenCodec();
+        List<Token> input2Tokens = lex(input4);
+        ByteBuffer input2Buffer = codec.encode(input2Tokens);
+        input2Buffer.flip();
+        String input2Ids = codec.decodeToIds(input2Buffer);
+
+         */
+
+        /*
         String mapVocabPath = dirPath + "mapVocabWithIdents.txt";
         int i = 0;
         StringBuilder sb = new StringBuilder();
@@ -396,8 +408,8 @@ public class ModelTokenCodec {
 
         String reconstructedJava = codec.decode(bufferToDecode);
 
-        //Parser parser = new Parser();
-        //reconstructedJava = parser.formatJavaCode(reconstructedJava);
+        Parser parser = new Parser();
+        reconstructedJava = parser.formatJavaCode(reconstructedJava);
 
         try {
             Files.writeString(Paths.get(corpusDecodedInputPath), reconstructedJava);
@@ -406,9 +418,9 @@ public class ModelTokenCodec {
         }
 
         /*
-        System.out.println(input2);
-        //System.out.println(idSequence);
-        System.out.println(decoded);
+        System.out.println(input4);
+        System.out.println(input2Ids);
+        //System.out.println(decoded);
 
          */
     }
