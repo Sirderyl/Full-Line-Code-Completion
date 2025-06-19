@@ -1,3 +1,5 @@
+src/main/java/com/codelm/FormatTest.java
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
