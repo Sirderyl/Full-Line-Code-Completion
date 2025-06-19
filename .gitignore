@@ -4,6 +4,8 @@
 .vscodeignore
 data
 logs
-bpe_models_test
-bpe_models_test2
+custom_bpe*
+bpe_models_test*
 yttm_models_test
+check_pair_frequency.py
+ident_filter.py
