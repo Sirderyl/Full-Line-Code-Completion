@@ -4,10 +4,11 @@ from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
-ID_CORPUS = "./data/clean_extract/corpus2_ids.txt"
-UNICODE_CORPUS = "./data/clean_extract/corpus2_unicode.txt"
-SAVE_PATH = "./custom_bpe_0/bpe_tokenizer.json"
-OUTPUT_ASSET_DIR = pathlib.Path("./custom_bpe_0/assets")
+ID_CORPUS = "./data/clean_extract/corpus_all_ids.txt"
+UNICODE_CORPUS = "./data/clean_extract/corpus_all_unicode.txt"
+ID_TO_TOKEN_FILE = "./data/clean_extract/mapVocab.txt"
+SAVE_PATH = "./custom_bpe_final/bpe_tokenizer.json"
+OUTPUT_ASSET_DIR = pathlib.Path("./custom_bpe_final/assets")
 
 INITIAL_VOCAB_SIZE = 226
 TARGET_VOCAB_SIZE = 16384
@@ -25,6 +26,34 @@ def convert_id_to_unicode(id_corpus_path, unicode_corpus_path):
                 continue
             chars = [id_to_char[t] for t in tokens]
             out_f.write(''.join(chars) + '\n')
+
+def load_id_to_token_mapping(id_vocab_file):
+    id_to_token = {}
+    with open(id_vocab_file, "r", encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            parts = line.split(' ', 2)
+            if len(parts) == 3:
+                token_id = parts[0]
+                token_text = parts[2]
+                id_to_token[token_id] = token_text
+            else:
+                token_id = parts[0]
+                id_to_token[token_id] = ""
+    return id_to_token
+
+def convert_ids_to_text(id_sequence, ids_to_tokens):
+    readable_tokens = []
+    for token_id in id_sequence:
+        if str(token_id) in ids_to_tokens:
+            token_text = ids_to_tokens[token_id]
+            if "IDENTIFIER" not in token_text:
+                readable_tokens.append(ids_to_tokens[token_id])
+        else:
+            readable_tokens.append(f"UNK_ID_{token_id}")
+    return readable_tokens
 
 def save_vocab(tokenizer, vocab_path):
     bpe_vocab = tokenizer.get_vocab()
@@ -48,9 +77,54 @@ def save_vocab(tokenizer, vocab_path):
 
             f.write(f"{readable_token}\t{bpe_id}\n")
 
+def save_vocab_with_readable_merges(tokenizer, vocab_path, id_to_token_file):
+    # Load the ID to token mapping
+    ids_to_tokens = load_id_to_token_mapping(id_to_token_file)
+    
+    bpe_vocab = tokenizer.get_vocab()
+
+    with open(vocab_path, "w", encoding="utf-8") as f:
+        for token_str, bpe_id in sorted(bpe_vocab.items(), key=lambda item: item[1]):
+            is_special = False
+
+            # Check if this is a special token
+            for char in token_str:
+                if char not in char_to_id:
+                    is_special = True
+                    break
+
+            if is_special:
+                # This is a special token like <UNK>
+                f.write(f"{token_str}\t{bpe_id}\n")
+                continue
+            else:
+                # Convert Unicode characters back to IDs, then to readable tokens
+                id_sequence = []
+                for char in token_str:
+                    original_id = char_to_id[char]
+                    id_sequence.append(original_id)
+                
+                # Convert IDs to readable tokens
+                readable_tokens = convert_ids_to_text(id_sequence, ids_to_tokens)
+                
+                # Format the output
+                if len(readable_tokens) == 1:
+                    # Single token
+                    merge_representation = readable_tokens[0]
+                    resulting_word = readable_tokens[0]
+                else:
+                    # BPE merge - show the sequence
+                    merge_representation = " + ".join(readable_tokens)
+                    resulting_word = "".join(readable_tokens)
+
+            if len(readable_tokens) == 1:
+                f.write(f"{merge_representation}\t{bpe_id}\n")
+            else:
+                f.write(f"{merge_representation} -> \"{resulting_word}\"\t{bpe_id}\n")
+
 def corpus_iterator(unicode_corpus_path):
     with open(unicode_corpus_path, "r", encoding="utf-8") as f:
-        for line_num, line in enumerate(f):
+        for _, line in enumerate(f):
             line = line.strip()
             yield line
 
@@ -80,7 +154,7 @@ def train_bpe():
     print(f"Target vocabulary size: {TARGET_VOCAB_SIZE}")
     print(f"Number of initial ID tokens: {len(initial_alphabet)}")
 
-    train_corpus = [UNICODE_CORPUS]
+    #train_corpus = [UNICODE_CORPUS]
 
     print("Starting BPE training...")
     #tokenizer.train(train_corpus, trainer=trainer)
@@ -94,7 +168,9 @@ def train_bpe():
 
     # Save the vocabulary
     bpe_vocab_path = OUTPUT_ASSET_DIR / "vocab.txt"
+    bpe_vocab_path_converted = OUTPUT_ASSET_DIR / "vocab_converted.txt"
     save_vocab(tokenizer, bpe_vocab_path)
+    save_vocab_with_readable_merges(tokenizer, bpe_vocab_path_converted, ID_TO_TOKEN_FILE)
     print(f"Vocabulary saved to: {bpe_vocab_path}")
     print(f"Final vocabulary size: {tokenizer.get_vocab_size()}")
 
@@ -130,3 +206,6 @@ if __name__ == "__main__":
     convert_id_to_unicode(ID_CORPUS, UNICODE_CORPUS)
     train_bpe()
     count_tokens(ID_CORPUS, SAVE_PATH)
+    #bpe_vocab_path_converted = OUTPUT_ASSET_DIR / "vocab_converted.txt"
+    #tokenizer = Tokenizer.from_file(SAVE_PATH)
+    #save_vocab_with_readable_merges(tokenizer, bpe_vocab_path_converted, ID_TO_TOKEN_FILE)
