@@ -1,13 +1,11 @@
 package com.codelm;
 
 import com.codelm.antlr.JavaLexer;
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
-import org.antlr.v4.runtime.Token;
-import org.antlr.v4.runtime.Vocabulary;
+import org.antlr.v4.runtime.*;
 
 import java.io.*;
 import java.nio.ByteBuffer;
+import java.nio.ShortBuffer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -32,7 +30,7 @@ public class ModelTokenCodec {
     }
 
     private final List<ModelToken> decodingTable = new ArrayList<>();
-    private final Map<String, ModelToken> encodingMap = new HashMap<>();
+    private final Map<String, ModelToken> encodingMap = new LinkedHashMap<>();
     private final Vocabulary antlrVocabulary = JavaLexer.VOCABULARY; // Cache for efficiency
 
     public static final char CHAR_MIN_VALUE = 32;
@@ -44,9 +42,9 @@ public class ModelTokenCodec {
     public static final String FALSE_TOKEN_KEY = "!LEX_FALSE";
     private short newlineId = -1;
 
-    public ModelTokenCodec() throws IOException {
+    public ModelTokenCodec(int identifiersToAdd) throws IOException {
         // New line token for line preservation in binary files and store the ID
-        _addTokenToMap(NEWLINE_TOKEN_KEY, "\n"); // ID 0
+        _addTokenToMap(NEWLINE_TOKEN_KEY, "<EOL>"); // ID 0
 
         this.newlineId = encodingMap.get(NEWLINE_TOKEN_KEY).id;
 
@@ -79,9 +77,11 @@ public class ModelTokenCodec {
 
         int mapSizeBeforeIdents = decodingTable.size();
 
-        List<String> identifiers = getIdentifiers(507); // 507 as some idents are a single char - won't get added to HashMap
-        for (String identifier : identifiers) {
-            _addTokenToMap(identifier);
+        if (identifiersToAdd > 0) {
+            List<String> identifiers = getIdentifiers(identifiersToAdd);
+            for (String identifier : identifiers) {
+                _addTokenToMap(identifier);
+            }
         }
 
         int identsAdded = decodingTable.size() - mapSizeBeforeIdents;
@@ -122,7 +122,7 @@ public class ModelTokenCodec {
     }
 
     public List<String> getIdentifiers(int count) throws IOException {
-        String identifiersFilePath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\analysis_output\\identifiers_weighted_count.txt";
+        String identifiersFilePath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\custom_bpe_0\\assets\\missing_idents.txt";
 
         FileReader fr = new FileReader(identifiersFilePath);
         BufferedReader br = new BufferedReader(fr);
@@ -132,8 +132,8 @@ public class ModelTokenCodec {
         String identifier;
         for (int i = 0; i < count; i++) {
             line = br.readLine();
-            identifier = line.split(":")[0];
-            identifiers.add(identifier);
+            //identifier = line.split(":")[0];
+            identifiers.add(line);
         }
 
         return identifiers;
@@ -213,6 +213,113 @@ public class ModelTokenCodec {
             byteBuffer.putShort(modelToken.id);
         }
         return byteBuffer;
+    }
+
+    public void encodeFileByStreaming(String inputPath, String outputPath) throws IOException {
+        // The number of lines to process in each chunk.
+        final int CHUNK_SIZE_IN_LINES = 500_000;
+
+        long totalTokenCount = 0;
+        int chunkNumber = 1;
+
+        try (
+                BufferedReader reader = new BufferedReader(new FileReader(inputPath, StandardCharsets.UTF_8));
+                DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(outputPath)))
+        ) {
+            String line;
+            StringBuilder chunkBuilder = new StringBuilder();
+            int linesInCurrentChunk = 0;
+
+            while ((line = reader.readLine()) != null) {
+                chunkBuilder.append(line).append('\n');
+                linesInCurrentChunk++;
+
+                if (linesInCurrentChunk >= CHUNK_SIZE_IN_LINES) {
+                    System.out.println("Processing chunk " + chunkNumber + "...");
+                    totalTokenCount += processChunk(chunkBuilder.toString(), out);
+
+                    // Reset for the next chunk
+                    chunkBuilder.setLength(0);
+                    linesInCurrentChunk = 0;
+                    chunkNumber++;
+                }
+            }
+
+            // Process the final, potentially smaller, chunk
+            if (chunkBuilder.length() > 0) {
+                System.out.println("Processing final chunk " + chunkNumber + "...");
+                totalTokenCount += processChunk(chunkBuilder.toString(), out);
+            }
+        }
+        System.out.println("Finished encoding. Total tokens processed: " + totalTokenCount);
+    }
+
+    private long processChunk(String chunk, DataOutputStream out) throws IOException {
+        // Use the standard lexer and a string-based stream for the chunk
+        JavaLexer lexer = new JavaLexer(CharStreams.fromString(chunk));
+        long tokenCountInChunk = 0;
+
+        for (Token token : lexer.getAllTokens()) {
+            if (token.getType() == Token.EOF) {
+                break;
+            }
+
+            String tokenText = token.getText();
+            int tokenType = token.getType();
+
+            if (tokenType == JavaLexer.COMMENT || tokenType == JavaLexer.LINE_COMMENT) continue;
+
+            if (tokenType == JavaLexer.WS) {
+                for (char c : tokenText.toCharArray()) {
+                    if (c == '\n') {
+                        if (this.newlineId != -1) {
+                            out.writeShort(this.newlineId);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            String tokenKey = lexerTokenTypeToModelTokenKey(tokenType);
+            ModelToken modelToken = encodingMap.get(tokenKey);
+
+            if (modelToken == null) {
+                continue;
+            }
+
+            if (tokenType == JavaLexer.BOOL_LITERAL) {
+                if (tokenText.equals("true")) {
+                    modelToken = encodingMap.get(TRUE_TOKEN_KEY);
+                } else if (tokenText.equals("false")) {
+                    modelToken = encodingMap.get(FALSE_TOKEN_KEY);
+                }
+                if (modelToken != null) {
+                    out.writeShort(modelToken.id);
+                }
+                continue;
+            }
+
+            if (tokenType == JavaLexer.IDENTIFIER) {
+                ModelToken identToken = encodingMap.get(tokenText);
+                if (identToken != null) {
+                    out.writeShort(identToken.id);
+                } else {
+                    out.writeShort(modelToken.id);
+                    for (char c : tokenText.toCharArray()) {
+                        String charTokenKey = asciiCharToModelTokenKey(c);
+                        ModelToken charModelToken = encodingMap.get(charTokenKey);
+                        if (charModelToken != null) {
+                            out.writeShort(charModelToken.id);
+                        }
+                    }
+                }
+                continue;
+            }
+
+            out.writeShort(modelToken.id);
+            tokenCountInChunk++;
+        }
+        return tokenCountInChunk;
     }
 
     // This decode method will be used in a Python wrapper after BPE decoding gives back sequence of IDs
@@ -302,6 +409,89 @@ public class ModelTokenCodec {
         return sb.toString().trim();
     }
 
+    public void decodeBinaryFileByStreaming(String inputPath, String outputPath) throws IOException {
+        System.out.println("Starting to decode binary file to source code by streaming...");
+
+        try (
+                DataInputStream in = new DataInputStream(new BufferedInputStream(new FileInputStream(inputPath)));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath, StandardCharsets.UTF_8))
+        ) {
+            // Cache token IDs for efficiency inside the loop.
+            short identifierId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.IDENTIFIER)).id;
+
+            // Literal IDs
+            short decimalLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.DECIMAL_LITERAL)).id;
+            short hexLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.HEX_LITERAL)).id;
+            short octLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.OCT_LITERAL)).id;
+            short binaryLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.BINARY_LITERAL)).id;
+            short floatLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.FLOAT_LITERAL)).id;
+            short hexFloatLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.HEX_FLOAT_LITERAL)).id;
+            short charLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.CHAR_LITERAL)).id;
+            short stringLiteralId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.STRING_LITERAL)).id;
+            short textBlockId = encodingMap.get(lexerTokenTypeToModelTokenKey(JavaLexer.TEXT_BLOCK)).id;
+            // ************
+
+            boolean inIdentifier = false;
+
+            // Process the file short by short.
+            while (in.available() > 0) {
+                short id = in.readShort();
+
+                if (id < 0 || id >= decodingTable.size()) {
+                    writer.write("<?>"); // Placeholder for unknown ID
+                    inIdentifier = false;
+                    continue;
+                }
+
+                if (this.newlineId != -1 && id == this.newlineId) {
+                    writer.newLine();
+                    inIdentifier = false;
+                    continue;
+                }
+
+                if (id == identifierId) {
+                    if (inIdentifier) {
+                        writer.write(" "); // Space between adjacent identifiers
+                    }
+                    inIdentifier = true;
+                    continue;
+                }
+
+                ModelToken token = decodingTable.get(id);
+                String val = token.value;
+
+                if (inIdentifier && token.key.length() == 1) {
+                    writer.write(val); // Append character to the current identifier
+                    continue;
+                }
+
+                if (inIdentifier) {
+                    writer.write(" "); // End of identifier, add a space
+                    inIdentifier = false;
+                }
+
+                if (id == decimalLiteralId || id == hexLiteralId || id == octLiteralId || id == binaryLiteralId ||
+                        id == floatLiteralId || id == hexFloatLiteralId) {
+                    writer.write("0 ");
+                    continue;
+                }
+                if (id == charLiteralId) {
+                    writer.write("'x' ");
+                    continue;
+                }
+                if (id == stringLiteralId || id == textBlockId) {
+                    writer.write("\"\" ");
+                    continue;
+                }
+
+                writer.write(val);
+                writer.write(" ");
+            }
+        }
+
+        System.out.println("Successfully decoded source code to: " + outputPath);
+    }
+
     public String decodeToIds(ByteBuffer byteBuffer) {
         StringBuilder sb = new StringBuilder();
         while (byteBuffer.hasRemaining()) {
@@ -313,6 +503,67 @@ public class ModelTokenCodec {
             }
         }
         return sb.toString().trim();
+    }
+
+    public void decodeFileToIdsByStreaming(String inputPath, String outputPath) throws IOException {
+        System.out.println("Starting to decode file to IDs ...");
+
+        final int BUFFER_SIZE_BYTES = 8192;
+
+        long totalBytes = Files.size(Paths.get(inputPath));
+        if (totalBytes == 0) {
+            System.out.println("Input file is empty.");
+            return;
+        }
+
+        long bytesRead = 0;
+        int lastPercentage = -1;
+
+        try (
+                InputStream in = new BufferedInputStream(new FileInputStream(inputPath));
+                BufferedWriter writer = new BufferedWriter(new FileWriter(outputPath, StandardCharsets.UTF_8))
+        ) {
+            // Reusable buffer for reading bytes from the file.
+            byte[] byteBuffer = new byte[BUFFER_SIZE_BYTES];
+
+            // Reusable StringBuilder to construct the output for each chunk, reducing write calls.
+            StringBuilder outputChunkBuilder = new StringBuilder(BUFFER_SIZE_BYTES * 4); // Pre-allocate capacity
+
+            int bytesReadInChunk;
+            // Read the file in chunks until the end of the stream is reached.
+            while ((bytesReadInChunk = in.read(byteBuffer)) != -1) {
+                ByteBuffer wrapped = ByteBuffer.wrap(byteBuffer, 0, bytesReadInChunk);
+                ShortBuffer shortBuffer = wrapped.asShortBuffer();
+
+                // Process all the shorts available in the current chunk.
+                for (int i = 0; i < shortBuffer.limit(); i++) {
+                    short id = shortBuffer.get(i);
+                    if (this.newlineId != -1 && id == this.newlineId) {
+                        // To maintain line breaks, write previous content and then the newline.
+                        writer.write(outputChunkBuilder.toString());
+                        outputChunkBuilder.setLength(0); // Clear the builder
+                        writer.write(String.valueOf(id));
+                        writer.write('\n');
+                    } else {
+                        outputChunkBuilder.append(id).append(" ");
+                    }
+                }
+
+                // Write the processed chunk to the file.
+                writer.write(outputChunkBuilder.toString());
+                outputChunkBuilder.setLength(0); // Clear the builder for the next round.
+
+                // --- Progress Bar ---
+                bytesRead += bytesReadInChunk;
+                int currentPercentage = (int) ((bytesRead * 100) / totalBytes);
+                if (currentPercentage > lastPercentage) {
+                    System.out.print("\rDecoding to IDs progress: " + currentPercentage + "%");
+                    lastPercentage = currentPercentage;
+                }
+            }
+        }
+        System.out.println("\rDecoding to IDs progress: 100%");
+        System.out.println("Successfully decoded IDs to: " + outputPath);
     }
 
     public static List<Token> lex(String input) {
@@ -327,23 +578,17 @@ public class ModelTokenCodec {
     }
 
     public static void main(String[] args) throws IOException {
-        /*
-        String input = "public static void foo(String bar) {}";
-        String input2 = "public String input = \"test string123\";";
-        String input3 = "public Integer i = new Integer(35);";
-        String input4 = "SharedPreferences";
-         */
-
         String javaInput;
 
-        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\with_idents_50\\";
-        String corpusInputPath = dirPath + "corpus2.txt";
-        String corpusBinaryOutputPath = dirPath + "corpus2_encoded.dat";
-        String idCorpusDecodedOutputPath = dirPath + "corpus2_ids.txt";
-        String corpusDecodedInputPath = dirPath + "corpus2_decoded.txt";
+        String dirPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\clean_extract\\";
+        String corpusInputPath = dirPath + "corpus_all.txt";
+        String corpusBinaryOutputPath = dirPath + "corpus_all_encoded.dat";
+        String idCorpusDecodedOutputPath = dirPath + "corpus_all_ids.txt";
+        String corpusDecodedInputPath = dirPath + "corpus_all_decoded.txt";
 
-        File inputFile = new java.io.File(corpusInputPath);
+        //File inputFile = new java.io.File(corpusInputPath);
 
+        /*
         if (inputFile.isFile() && inputFile.canRead()) {
             javaInput = new String(Files.readAllBytes(Paths.get(corpusInputPath)));
         } else {
@@ -351,7 +596,10 @@ public class ModelTokenCodec {
             return;
         }
 
-        ModelTokenCodec codec = new ModelTokenCodec();
+         */
+
+        ModelTokenCodec codec = new ModelTokenCodec(0);
+        /*
         List<Token> lexerTokens = lex(javaInput);
         ByteBuffer byteSequence = codec.encode(lexerTokens);
         System.out.println("Finished encoding. ByteBuffer position: " + byteSequence.position() + ", limit: " +
@@ -365,6 +613,15 @@ public class ModelTokenCodec {
             fos.write(bytesToWrite);
         }
 
+         */
+
+        System.out.println("Starting to encode corpus file by streaming...");
+        codec.encodeFileByStreaming(corpusInputPath, corpusBinaryOutputPath);
+        System.out.println("Successfully encoded corpus to: " + corpusBinaryOutputPath);
+
+        codec.decodeFileToIdsByStreaming(corpusBinaryOutputPath, idCorpusDecodedOutputPath);
+
+        /*
         byte[] binaryCorpusBytes;
         try {
             binaryCorpusBytes = Files.readAllBytes(Paths.get(corpusBinaryOutputPath));
@@ -382,6 +639,8 @@ public class ModelTokenCodec {
             throw new RuntimeException(e);
         }
 
+         */
+
         /*
         ModelTokenCodec codec = new ModelTokenCodec();
         List<Token> input2Tokens = lex(input4);
@@ -391,19 +650,18 @@ public class ModelTokenCodec {
 
          */
 
-        /*
-        String mapVocabPath = dirPath + "mapVocabWithIdents.txt";
+        String mapVocabPath = dirPath + "mapVocab.txt";
         int i = 0;
         StringBuilder sb = new StringBuilder();
         for (String key : codec.encodingMap.keySet()) {
             ModelToken token = codec.encodingMap.get(key);
-            sb.append(i).append(" ").append(key).append("\n");
+            sb.append(i).append(" ").append(key).append(" ").append(token.value).append("\n");
             i++;
         }
         Files.writeString(Paths.get(mapVocabPath), sb.toString());
 
-         */
 
+        /*
         bufferToDecode.rewind();
 
         String reconstructedJava = codec.decode(bufferToDecode);
@@ -416,6 +674,8 @@ public class ModelTokenCodec {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+         */
 
         /*
         System.out.println(input4);
