@@ -14,6 +14,7 @@ def process_java_file(java_file):
     try:
         with open(java_file, 'r', encoding='utf-8') as f_java:
             content = f_java.read()
+            # Strip indentation and trailing whitespace and remove empty lines
             lines = [line.strip() for line in content.splitlines() if line.strip()]
             if lines:
                 return "\n".join(lines) + "\n"
@@ -55,7 +56,7 @@ if not java_files_paths:
     raise FileNotFoundError("No Java files found in the specified directory.")
 
 print(f"Found {len(java_files_paths)} Java files.")
-print(f"Processing in batches of {BATCH_SIZE} files to manage memory usage...")
+print(f"Processing in batches of {BATCH_SIZE} files ...")
 
 # Process files in batches to avoid memory issues
 with open(output, "w", encoding="utf-8", buffering=8192*8) as outfile:
