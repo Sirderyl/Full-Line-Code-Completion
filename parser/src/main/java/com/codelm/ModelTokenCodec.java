@@ -611,8 +611,8 @@ public class ModelTokenCodec {
 
     public static void main(String[] args) throws IOException {
         /*
-        Compile to jar with:
-        javac -cp "C:\Users\spide\Downloads\antlr-4.13.2-complete.jar" target/generated-sources/antlr4/com/codelm/antlr/JavaLexer.java src/main/java/com/codelm/ModelTokenCodec.java -d out
+        Compile to jar with (replace directory with your copy of ANTLR):
+        javac -cp ".\antlr-4.13.2-complete.jar" target/generated-sources/antlr4/com/codelm/antlr/JavaLexer.java src/main/java/com/codelm/ModelTokenCodec.java -d out
         jar cfe ModelTokenCodec.jar com.codelm.ModelTokenCodec -C out .
          */
 
