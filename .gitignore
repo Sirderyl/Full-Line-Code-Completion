@@ -4,6 +4,11 @@
 .vscodeignore
 data
 logs
+model
+model6k
+JetBrains_model
+JB_yttm_models_test
+JB_yttm_models_test2
 custom_bpe*
 bpe_models_test*
 yttm_models_test
@@ -15,3 +20,10 @@ train.ipynb
 train_bpe_sentencepiece.py
 train_bpe_yttm.py
 vocab_prepend.py
+aws_runtime.py
+check_cuda.py
+inference.py
+inference2.py
+inference3.py
+test_tokenizer.py
+polycoder.py
