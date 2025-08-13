@@ -13,6 +13,8 @@ JetBrains_model
 JB_yttm_models_test
 JB_yttm_models_test2
 custom_bpe*
+!custom_bpe_final
+!custom_bpe_final6k
 bpe_models_test*
 yttm_models_test
 check_pair_frequency.py
