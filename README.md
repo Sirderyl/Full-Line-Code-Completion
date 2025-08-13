@@ -6,6 +6,11 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
+Pull model files:
+```bash
+git lfs pull
+```
+
 ## To run the model in inference mode
 
 ```bash
