@@ -30,9 +30,6 @@ public class Parser {
         // Calling formatJavaCode as it shifts in-line comments which otherwise would not get picked up by getAllComments()
         CompilationUnit cu = StaticJavaParser.parse(formatJavaCode(noPrefixCode));
 
-        // For in-line comment removal which would not get picked up
-        //LexicalPreservingPrinter.setup(cu);
-
         // Remove comments
         cu.getAllComments().forEach(Comment::remove);
 
@@ -41,16 +38,11 @@ public class Parser {
                 .filter(node -> node instanceof NodeWithAnnotations)
                 .forEach(node -> ((NodeWithAnnotations<?>) node).getAnnotations().clear());
 
-        // Remove annotation declarations (e.g., @interface definitions)
-        //cu.findAll(AnnotationDeclaration.class).forEach(Node::remove);
-
-        // Remove annotation member declarations
-        //cu.findAll(AnnotationMemberDeclaration.class).forEach(Node::remove);
-
         return cu.toString();
     }
 
     private String removePrefixLines(String javaCode) {
+        // Standardize newlines to UNIX \n
         String normalizedCode = javaCode.replace("\r\n", "\n");
         normalizedCode = normalizedCode.replace("\r", "\n");
 

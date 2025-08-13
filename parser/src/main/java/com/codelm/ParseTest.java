@@ -4,6 +4,9 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+/**
+ * Test parsing on a single file. Not used in the overall pipeline
+ */
 public class ParseTest {
     public static void main(String[] args) {
         try {
