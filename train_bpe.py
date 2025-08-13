@@ -1,17 +1,19 @@
 import pathlib
+import glob
+import os
 from tokenizers import Tokenizer, normalizers
 from tokenizers.models import BPE
 from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
-ID_CORPUS = "./data/clean_extract/corpus_all_ids.txt"
-UNICODE_CORPUS = "./data/clean_extract/corpus_all_unicode.txt"
-ID_TO_TOKEN_FILE = "./data/clean_extract/mapVocab.txt"
-SAVE_PATH = "./custom_bpe_final/bpe_tokenizer.json"
-OUTPUT_ASSET_DIR = pathlib.Path("./custom_bpe_final/assets")
+ID_CORPUS = "./data/clean_extract/corpus2_ids.txt"              # Path to the ID corpus (no need to use this if corpus is already converted from ModelTokenCodec)
+UNICODE_CORPUS = "./data/clean_extract/corpus2_unicode.txt"     # Path to the Unicode corpus file
+ID_TO_TOKEN_FILE = "./data/clean_extract/mapVocab.txt"          # Path to the ID to token mapping file (from ModelTokenCodec)
+SAVE_PATH = "./custom_bpe_final/bpe_tokenizer.json"             # Path to save the trained BPE tokenizer
+OUTPUT_ASSET_DIR = pathlib.Path("./custom_bpe_final/assets")    # Directory to save the assets like vocab.txt and vocab_converted.txt
 
-INITIAL_VOCAB_SIZE = 226
-TARGET_VOCAB_SIZE = 16384
+INITIAL_VOCAB_SIZE = 226    # Initial reserved vocabulary size based on ModelTokenCodec's ID tokens (0-225)
+TARGET_VOCAB_SIZE = 16384   # Target vocabulary size for BPE
 
 # Map "0" -> U+E000 ... "225" -> U+E0E1
 id_to_char = { str(i): chr(0xE000 + i) for i in range(INITIAL_VOCAB_SIZE) }
@@ -122,6 +124,16 @@ def save_vocab_with_readable_merges(tokenizer, vocab_path, id_to_token_file):
             else:
                 f.write(f"{merge_representation} -> \"{resulting_word}\"\t{bpe_id}\n")
 
+def convert_unicode_to_ids(unicode_corpus_path, id_corpus_path):
+    with open(unicode_corpus_path, "r", encoding="utf-8", newline="\n") as in_f, \
+        open(id_corpus_path, "w", encoding="utf-8", newline="\n") as out_f:
+        for line in in_f:
+            tokens = line.strip()
+            if not tokens:
+                continue
+            id_tokens = [char_to_id[char] for char in tokens if char in char_to_id]
+            out_f.write(' '.join(id_tokens) + '\n')
+
 def corpus_iterator(unicode_corpus_path):
     with open(unicode_corpus_path, "r", encoding="utf-8") as f:
         for _, line in enumerate(f):
@@ -135,7 +147,7 @@ def train_bpe():
     initial_alphabet = list(id_to_char.values())
 
     # Special tokens for BPE, such as unknown
-    special_tokens = ["<UNK>"]
+    special_tokens = ["<UNK>", "<PAD>"]
 
     tokenizer = Tokenizer(BPE(unk_token=special_tokens[0]))
 
@@ -154,10 +166,8 @@ def train_bpe():
     print(f"Target vocabulary size: {TARGET_VOCAB_SIZE}")
     print(f"Number of initial ID tokens: {len(initial_alphabet)}")
 
-    #train_corpus = [UNICODE_CORPUS]
-
     print("Starting BPE training...")
-    #tokenizer.train(train_corpus, trainer=trainer)
+
     tokenizer.train_from_iterator(
         corpus_iterator(UNICODE_CORPUS),
         trainer=trainer
@@ -181,31 +191,93 @@ def count_tokens(corpus_path: str, tokenizer_path: str):
     total_tokens = 0
     processed_lines = 0
 
-    print(f"Processing ID corpus: {corpus_path} to count BPE tokens.")
+    print(f"Processing corpus: {corpus_path} to count BPE tokens.")
 
     with open(corpus_path, "r", encoding="utf-8") as f_corpus:
         for _, line_content in enumerate(f_corpus):
-            id_tokens = line_content.strip().split()
+            id_tokens = line_content.strip()
+
+            if not line_content:    # Skip empty lines
+                continue
+
+            # Uncomment if the corpus passed is in ID format
 
             # Convert ID tokens in the line to their corresponding Unicode characters.
             # This mimics the structure of UNICODE_CORPUS used for training.
-            unicode_string_to_encode = ''.join([id_to_char[t] for t in id_tokens])
+            #unicode_string_to_encode = ''.join([id_to_char[t] for t in id_tokens])
 
-            encoding = tokenizer.encode(unicode_string_to_encode)
+            encoding = tokenizer.encode(id_tokens)
             total_tokens += len(encoding.tokens)
 
             processed_lines += 1
             if processed_lines > 0 and processed_lines % 100_000 == 0: # Progress indicator
-                print(f"Processed {processed_lines} lines, total BPE tokens so far: {total_tokens}")
+                avg_tokens_per_line = total_tokens / processed_lines
+                print(f"Processed {processed_lines} lines, total BPE tokens so far: {total_tokens}, "
+                      f"avg tokens/line: {avg_tokens_per_line:.2f}")
+
+    avg_tokens_per_line = total_tokens / processed_lines if processed_lines > 0 else 0
 
     print(f"\nFinished processing {processed_lines} lines from '{corpus_path}'.")
     print(f"Total BPE tokens generated: {total_tokens}")
+    print(f"Average tokens per line: {avg_tokens_per_line:.2f}")
+    return total_tokens
+
+def count_tokens_from_subfolders(base_path: str, tokenizer_path: str):
+    print(f"Loading tokenizer from: {tokenizer_path}")
+    tokenizer = Tokenizer.from_file(tokenizer_path)
+
+    total_tokens = 0
+    processed_lines = 0
+    processed_files = 0
+
+    print(f"Processing multi-part corpus from: {base_path}")
+
+    # Find all processed_part_* directories
+    part_dirs = glob.glob(os.path.join(base_path, "processed_part_*"))
+    part_dirs.sort()  # Ensure consistent ordering
+    
+    print(f"Found {len(part_dirs)} part directories")
+
+    for part_dir in part_dirs:
+        print(f"Processing directory: {os.path.basename(part_dir)}")
+        
+        # Find all .txt files in this part directory
+        txt_files = glob.glob(os.path.join(part_dir, "*.txt"))
+        
+        for file_path in txt_files:
+            #print(f"  Processing file: {os.path.basename(file_path)}")
+            
+            with open(file_path, "r", encoding="utf-8") as f_corpus:
+                for _, line_content in enumerate(f_corpus):
+                    tokens = line_content.strip()
+                    
+                    if not tokens:  # Skip empty lines
+                        continue
+
+                    encoding = tokenizer.encode(tokens)
+                    total_tokens += len(encoding.tokens)
+
+                    processed_lines += 1
+                    if processed_lines > 0 and processed_lines % 100_000 == 0: # Progress indicator
+                        avg_tokens_per_line = total_tokens / processed_lines
+                        print(f"    Processed {processed_lines} lines, total BPE tokens so far: {total_tokens}, "
+                              f"avg tokens/line: {avg_tokens_per_line:.2f}")
+            
+            processed_files += 1
+
+    avg_tokens_per_line = total_tokens / processed_lines if processed_lines > 0 else 0
+    
+    print(f"\nFinished processing {processed_files} files across {len(part_dirs)} directories.")
+    print(f"Total lines processed: {processed_lines}")
+    print(f"Total BPE tokens generated: {total_tokens}")
+    print(f"Average tokens per line: {avg_tokens_per_line:.2f}")
     return total_tokens
 
 if __name__ == "__main__":
-    convert_id_to_unicode(ID_CORPUS, UNICODE_CORPUS)
+    # Uncomment if needed to convert ID corpus to Unicode
+    #convert_id_to_unicode(ID_CORPUS, UNICODE_CORPUS)
     train_bpe()
-    count_tokens(ID_CORPUS, SAVE_PATH)
-    #bpe_vocab_path_converted = OUTPUT_ASSET_DIR / "vocab_converted.txt"
-    #tokenizer = Tokenizer.from_file(SAVE_PATH)
-    #save_vocab_with_readable_merges(tokenizer, bpe_vocab_path_converted, ID_TO_TOKEN_FILE)
+    count_tokens(UNICODE_CORPUS, SAVE_PATH)
+    bpe_vocab_path_converted = OUTPUT_ASSET_DIR / "vocab_converted.txt"
+    tokenizer = Tokenizer.from_file(SAVE_PATH)
+    save_vocab_with_readable_merges(tokenizer, bpe_vocab_path_converted, ID_TO_TOKEN_FILE)
