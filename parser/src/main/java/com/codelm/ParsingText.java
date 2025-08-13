@@ -24,6 +24,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Run this class for the main preprocessing pipeline.
+ * It also generates token type statistics from the whole dataset
+ */
 public class ParsingText {
     private static final String INPUT_DIR = "../data/extracted_java_zip";
     private static final String OUTPUT_DIR = "../data/cleaned_java_zip";
@@ -82,6 +86,7 @@ public class ParsingText {
                                     return new Result(entry.getName(), formattedCode, stats);
                                 }
                             } catch (Exception e) {
+                                // Filtering out files containing source code that does not compile
                                 //System.err.println("Error processing file " + entry.getName() + " in " + zipName + ": " + e.getMessage());
                             }
 

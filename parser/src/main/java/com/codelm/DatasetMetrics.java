@@ -18,6 +18,9 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
 
+/**
+ * Measure dataset size and number of files from zip archives
+ */
 public class DatasetMetrics {
     // Set thread pool size to the number of CPU cores
     private static final int THREAD_POOL_SIZE = Runtime.getRuntime().availableProcessors();
