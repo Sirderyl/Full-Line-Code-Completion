@@ -4,8 +4,10 @@
 .vscodeignore
 data
 logs
-model
-model6k
+model/checkpoint-*
+model/inference*
+model6k/checkpoint-*
+model6k/inference*
 JetBrains_model
 JB_yttm_models_test
 JB_yttm_models_test2
