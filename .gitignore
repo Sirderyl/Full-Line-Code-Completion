@@ -8,6 +8,7 @@ model/checkpoint-*
 model/inference*
 model6k/checkpoint-*
 model6k/inference*
+sentencepiece_models_old
 JetBrains_model
 JB_yttm_models_test
 JB_yttm_models_test2
