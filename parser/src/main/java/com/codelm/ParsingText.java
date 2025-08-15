@@ -1,6 +1,7 @@
 package com.codelm;
 
 import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -31,6 +32,7 @@ import java.util.zip.ZipOutputStream;
 public class ParsingText {
     private static final String INPUT_DIR = "../data/extracted_java_zip";
     private static final String OUTPUT_DIR = "../data/cleaned_java_zip";
+    private static final String STATS_DIR = "../data/analysis_output";
     private static final String STATS_FILE = "../data/analysis_output/token_stats.txt";
     private static final String LITERALS_LOG = "../data/analysis_output/literals.log";
     private static final String IDENTIFIERS_LOG = "../data/analysis_output/identifiers.log";
@@ -44,9 +46,25 @@ public class ParsingText {
 
         Path inputPath = Paths.get(INPUT_DIR);
         Path outputPath = Paths.get(OUTPUT_DIR);
+        Files.createDirectories(outputPath);
         CumulativeTokenStats cStats = new CumulativeTokenStats();
 
         // Clear log files at the start
+        Files.createDirectories(Paths.get(STATS_DIR));
+        File tokenStatsFile = new File(STATS_DIR + "/token_stats.txt");
+        File literalsFile = new File(STATS_DIR + "/literals.log");
+        File identifiersFile = new File(STATS_DIR + "/identifiers.log");
+
+        if (!tokenStatsFile.exists()) {
+            Files.createFile(tokenStatsFile.toPath());
+        }
+        if (!literalsFile.exists()) {
+            Files.createFile(literalsFile.toPath());
+        }
+        if (!identifiersFile.exists()) {
+            Files.createFile(identifiersFile.toPath());
+        }
+        
         Files.write(Paths.get(LITERALS_LOG), new ArrayList<>(), StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING);
         Files.write(Paths.get(IDENTIFIERS_LOG), new ArrayList<>(), StandardOpenOption.CREATE,
