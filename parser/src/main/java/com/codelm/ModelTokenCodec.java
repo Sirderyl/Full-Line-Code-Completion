@@ -612,7 +612,7 @@ public class ModelTokenCodec {
     public static void main(String[] args) throws IOException {
         /*
         Compile to jar with (replace directory with your copy of ANTLR):
-        javac -cp ".\antlr-4.13.2-complete.jar" target/generated-sources/antlr4/com/codelm/antlr/JavaLexer.java src/main/java/com/codelm/ModelTokenCodec.java -d out
+        javac -cp "./antlr-4.13.2-complete.jar" target/generated-sources/antlr4/com/codelm/antlr/JavaLexer.java src/main/java/com/codelm/ModelTokenCodec.java -d out
         jar cfe ModelTokenCodec.jar com.codelm.ModelTokenCodec -C out .
          */
 
@@ -655,8 +655,8 @@ public class ModelTokenCodec {
                     System.err.println("Usage: java -jar ModelTokenCodec.jar batchEncode");
                     System.exit(1);
                 }
-                String inputDirectoryPath = "D:\\dataset\\javazip";
-                String outputDirectoryPath = "C:\\Users\\spide\\Desktop\\Repos\\Full-Line-Code-Completion\\data\\processed_dataset";
+                String inputDirectoryPath = "../data/cleaned_java_zip/";
+                String outputDirectoryPath = "../data/processed_dataset/";
                 System.out.println("Starting batch encoding...");
                 System.out.println("Input Directory: " + inputDirectoryPath);
                 System.out.println("Output Directory: " + outputDirectoryPath);

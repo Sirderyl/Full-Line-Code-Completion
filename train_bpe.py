@@ -7,7 +7,7 @@ from tokenizers.trainers import BpeTrainer
 from tokenizers.pre_tokenizers import Whitespace
 
 ID_CORPUS = "./data/corpus_ids.txt"                             # Path to the ID corpus (no need to use this if corpus is already converted from ModelTokenCodec)
-UNICODE_CORPUS = "/data/corpus_unicode.txt"                     # Path to the Unicode corpus file
+UNICODE_CORPUS = "./data/corpus_unicode.txt"                     # Path to the Unicode corpus file
 ID_TO_TOKEN_FILE = "./data/processed_dataset/mapVocab.txt"      # Path to the ID to token mapping file (from ModelTokenCodec)
 SAVE_PATH = "./custom_bpe_final/bpe_tokenizer.json"             # Path to save the trained BPE tokenizer
 OUTPUT_ASSET_DIR = pathlib.Path("./custom_bpe_final/assets")    # Directory to save the assets like vocab.txt and vocab_converted.txt
@@ -278,6 +278,3 @@ if __name__ == "__main__":
     #convert_id_to_unicode(ID_CORPUS, UNICODE_CORPUS)
     train_bpe()
     count_tokens(UNICODE_CORPUS, SAVE_PATH)
-    bpe_vocab_path_converted = OUTPUT_ASSET_DIR / "vocab_converted.txt"
-    tokenizer = Tokenizer.from_file(SAVE_PATH)
-    save_vocab_with_readable_merges(tokenizer, bpe_vocab_path_converted, ID_TO_TOKEN_FILE)

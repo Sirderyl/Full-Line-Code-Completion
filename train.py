@@ -79,7 +79,7 @@ def count_train_files(base_dir, split_ratio=0.9):
     return total_files
 
 # Replace the dataset loading lines with:
-base_dir = "/mnt/local/project/dataset"
+base_dir = "./data/processed_dataset"
 
 total_train_files = count_train_files(base_dir=base_dir, split_ratio=0.999)
 
