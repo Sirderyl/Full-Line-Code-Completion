@@ -661,17 +661,6 @@ public class ModelTokenCodec {
                 System.out.println("Input Directory: " + inputDirectoryPath);
                 System.out.println("Output Directory: " + outputDirectoryPath);
                 encodeZip(inputDirectoryPath, outputDirectoryPath);
-
-                String mapVocabPath = outputDirectoryPath + "mapVocab.txt";
-                int i = 0;
-                StringBuilder sb = new StringBuilder();
-                for (String key : codec.encodingMap.keySet()) {
-                    ModelToken token = codec.encodingMap.get(key);
-                    sb.append(i).append(" ").append(key).append(" ").append(token.value).append("\n");
-                    i++;
-                }
-                Files.writeString(Paths.get(mapVocabPath), sb.toString());
-
                 break;
 
             case "testDecode":
