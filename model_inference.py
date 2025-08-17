@@ -68,10 +68,7 @@ print(f"Estimated Model + Tokenizer Memory: {memory_after_model - memory_before_
 
 # --- Define input prompts for generation ---
 
-prompt = '''public class HelloWorld {
-public static void main(String[] args) {'''
-
-prompt2 = '''package com.codelm;
+prompt = '''package com.codelm;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -94,7 +91,7 @@ public CumulativeTokenStats() {'''
 
 # Encode the Java string prompt into the Unicode format for the model
 try:
-    unicode_prompt = run_codec("encode", prompt2)
+    unicode_prompt = run_codec("encode", prompt)
     print(f"Prompt encoded successfully.\n{unicode_prompt}")
 except (subprocess.CalledProcessError, FileNotFoundError) as e:
     print(f"Error running the Java encoder: {e}")
@@ -108,7 +105,7 @@ inputs = tokenizer(unicode_prompt, return_tensors="pt").to(DEVICE)
 input_len = inputs["input_ids"].shape[-1]
 
 print("\n--- Generating code ---")
-print(f"Prompt:\n{prompt2}")
+print(f"Prompt:\n{prompt}")
 
 # Monitor memory before generation
 memory_before_generation = process.memory_info().rss / 1024**3
