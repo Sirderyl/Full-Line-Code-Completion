@@ -8,6 +8,7 @@ pip install -r requirements.txt
 
 Pull model files:
 ```bash
+git lfs install
 git lfs pull
 ```
 
